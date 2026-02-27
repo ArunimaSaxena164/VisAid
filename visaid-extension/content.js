@@ -1,166 +1,202 @@
-console.log("VisAid Content Script Loaded");
+// console.log("VisAid Content Script Loaded");
 
-/* =========================================
-   1️⃣  Traverse Shadow DOM Recursively
-========================================= */
+// /* =========================================
+//    1️⃣  Traverse Shadow DOM Recursively
+// ========================================= */
 
-function getAllInteractiveElements(root = document) {
-    let elements = [
-        ...root.querySelectorAll("input, select, textarea, button")
-    ];
+// function getAllInteractiveElements(root = document) {
+//     let elements = [
+//         ...root.querySelectorAll("input, select, textarea, button")
+//     ];
 
-    root.querySelectorAll("*").forEach(el => {
-        if (el.shadowRoot) {
-            elements = elements.concat(getAllInteractiveElements(el.shadowRoot));
-        }
-    });
+//     root.querySelectorAll("*").forEach(el => {
+//         if (el.shadowRoot) {
+//             elements = elements.concat(getAllInteractiveElements(el.shadowRoot));
+//         }
+//     });
 
-    return elements;
-}
+//     return elements;
+// }
 
-/* =========================================
-   2️⃣  Extract Page Data
-========================================= */
+// /* =========================================
+//    2️⃣  Extract Page Data
+// ========================================= */
 
-function extractPageData() {
+// function extractPageData() {
 
-    const elements = getAllInteractiveElements();
-    const fields = [];
+//     const elements = getAllInteractiveElements();
+//     const fields = [];
 
-    elements.forEach(field => {
+//     elements.forEach(field => {
 
-        // Ignore true hidden inputs only
-        if (field.type === "hidden") return;
+//         // Ignore true hidden inputs only
+//         if (field.type === "hidden") return;
 
-        let labelText = null;
+//         let labelText = null;
 
-        // Case 1: label[for=id]
-        if (field.id) {
-            const label = document.querySelector(`label[for="${field.id}"]`);
-            if (label) labelText = label.innerText.trim();
-        }
+//         // Case 1: label[for=id]
+//         if (field.id) {
+//             const label = document.querySelector(`label[for="${field.id}"]`);
+//             if (label) labelText = label.innerText.trim();
+//         }
 
-        // Case 2: wrapped inside label
-        if (!labelText) {
-            const parentLabel = field.closest("label");
-            if (parentLabel) labelText = parentLabel.innerText.trim();
-        }
+//         // Case 2: wrapped inside label
+//         if (!labelText) {
+//             const parentLabel = field.closest("label");
+//             if (parentLabel) labelText = parentLabel.innerText.trim();
+//         }
 
-        // Case 3: sibling label (common in React/styled-components)
-        if (!labelText) {
-            const siblingLabel = field.parentElement?.querySelector("label");
-            if (siblingLabel) labelText = siblingLabel.innerText.trim();
-        }
+//         // Case 3: sibling label (common in React/styled-components)
+//         if (!labelText) {
+//             const siblingLabel = field.parentElement?.querySelector("label");
+//             if (siblingLabel) labelText = siblingLabel.innerText.trim();
+//         }
 
-        // Case 4: aria-label
-        if (!labelText && field.getAttribute("aria-label")) {
-            labelText = field.getAttribute("aria-label");
-        }
+//         // Case 4: aria-label
+//         if (!labelText && field.getAttribute("aria-label")) {
+//             labelText = field.getAttribute("aria-label");
+//         }
 
-        fields.push({
-            tag: field.tagName.toLowerCase(),
-            type: field.type || null,
-            id: field.id || null,
-            name: field.name || null,
-            value: field.value || null,
-            placeholder: field.placeholder || null,
-            required: field.required || false,
-            disabled: field.disabled || false,
-            label: labelText
-        });
+//         fields.push({
+//             tag: field.tagName.toLowerCase(),
+//             type: field.type || null,
+//             id: field.id || null,
+//             name: field.name || null,
+//             value: field.value || null,
+//             placeholder: field.placeholder || null,
+//             required: field.required || false,
+//             disabled: field.disabled || false,
+//             label: labelText
+//         });
 
-    });
+//     });
 
-    /* =========================================
-       3️⃣  Extract Visible Error Messages
-    ========================================= */
+//     /* =========================================
+//        3️⃣  Extract Visible Error Messages
+//     ========================================= */
 
-    const errors = [];
+//     const errors = [];
 
-    document.querySelectorAll("*").forEach(el => {
-        if (
-            el.innerText &&
-            el.innerText.length < 200 &&
-            (
-                el.innerText.toLowerCase().includes("required") ||
-                el.innerText.toLowerCase().includes("invalid") ||
-                el.innerText.toLowerCase().includes("error")
-            )
-        ) {
-            errors.push(el.innerText.trim());
-        }
-    });
+//     document.querySelectorAll("*").forEach(el => {
+//         if (
+//             el.innerText &&
+//             el.innerText.length < 200 &&
+//             (
+//                 el.innerText.toLowerCase().includes("required") ||
+//                 el.innerText.toLowerCase().includes("invalid") ||
+//                 el.innerText.toLowerCase().includes("error")
+//             )
+//         ) {
+//             errors.push(el.innerText.trim());
+//         }
+//     });
 
-    /* =========================================
-       4️⃣  Extract Visible Page Text (for TTS)
-    ========================================= */
+//     /* =========================================
+//        4️⃣  Extract Visible Page Text (for TTS)
+//     ========================================= */
 
-    const visibleText = [];
+//     const visibleText = [];
 
-    document.querySelectorAll("h1, h2, h3, p, span, label").forEach(el => {
-        if (
-            el.innerText &&
-            el.innerText.length > 0 &&
-            el.innerText.length < 300
-        ) {
-            visibleText.push(el.innerText.trim());
-        }
-    });
+//     document.querySelectorAll("h1, h2, h3, p, span, label").forEach(el => {
+//         if (
+//             el.innerText &&
+//             el.innerText.length > 0 &&
+//             el.innerText.length < 300
+//         ) {
+//             visibleText.push(el.innerText.trim());
+//         }
+//     });
 
-    return {
-        url: window.location.href,
-        title: document.title,
-        fields,
-        errors,
-        visibleText
-    };
-}
+//     return {
+//         url: window.location.href,
+//         title: document.title,
+//         fields,
+//         errors,
+//         visibleText
+//     };
+// }
 
-/* =========================================
-   5️⃣  Debounced Sender (Prevents Spam)
-========================================= */
+// /* =========================================
+//    5️⃣  Debounced Sender (Prevents Spam)
+// ========================================= */
 
-let debounceTimeout = null;
+// let debounceTimeout = null;
 
-function sendToBackendDebounced() {
+// function sendToBackendDebounced() {
 
-    if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
+//     if (debounceTimeout) {
+//         clearTimeout(debounceTimeout);
+//     }
+
+//     debounceTimeout = setTimeout(async () => {
+
+//         const pageData = extractPageData();
+
+//         try {
+//             await fetch("http://localhost:8000/live-form", {
+//                 method: "POST",
+//                 headers: {
+//                     "Content-Type": "application/json"
+//                 },
+//                 body: JSON.stringify(pageData)
+//             });
+//         } catch (err) {
+//             console.error("Backend error:", err);
+//         }
+
+//     }, 1000); // max once per second
+// }
+
+// /* =========================================
+//    6️⃣  Live Monitoring
+// ========================================= */
+
+// // Initial send
+// sendToBackendDebounced();
+
+// // Detect typing
+// document.addEventListener("input", sendToBackendDebounced);
+
+// // Detect DOM changes (React, Angular, etc.)
+// const observer = new MutationObserver(sendToBackendDebounced);
+
+// observer.observe(document.body, {
+//     childList: true,
+//     subtree: true
+// });
+console.log("VisAid Activated");
+
+function detectFormAndSend() {
+
+    const form = document.querySelector("form");
+
+    if (!form) {
+        console.log("No form found.");
+        return;
     }
 
-    debounceTimeout = setTimeout(async () => {
+    const formHTML = form.outerHTML;
 
-        const pageData = extractPageData();
-
-        try {
-            await fetch("http://localhost:8000/live-form", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(pageData)
-            });
-        } catch (err) {
-            console.error("Backend error:", err);
-        }
-
-    }, 1000); // max once per second
+    chrome.runtime.sendMessage({
+        endpoint: "form-loaded",
+        data: { html: formHTML }
+    }, handleBackendResponse);
 }
 
-/* =========================================
-   6️⃣  Live Monitoring
-========================================= */
+function handleBackendResponse(response) {
 
-// Initial send
-sendToBackendDebounced();
+    if (!response || response.action === "none") return;
 
-// Detect typing
-document.addEventListener("input", sendToBackendDebounced);
+    if (response.action === "speak") {
+        speak(response.text);
+    }
+}
 
-// Detect DOM changes (React, Angular, etc.)
-const observer = new MutationObserver(sendToBackendDebounced);
+function speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    speechSynthesis.speak(utterance);
+}
 
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
+window.addEventListener("load", () => {
+    setTimeout(detectFormAndSend, 1000);
 });
