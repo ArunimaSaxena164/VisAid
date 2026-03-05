@@ -11,32 +11,57 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-latest_data = {}
+fields = []
+current_index = 0
+
 
 @app.post("/form-loaded")
 async def form_loaded(data: dict):
-    global latest_data
 
-    html = data.get("html")
+    global fields, current_index
 
-    if not html:
+    fields = data.get("fields", [])
+
+    current_index = 0
+
+    if not fields:
         return {"action": "none"}
-
-    latest_data = {
-        "html_snapshot": html[:2000]  # limit for debug
-    }
 
     return {
         "action": "speak",
-        "text": "Form detected. Let's begin."
+        "text": f"Form detected on this page. Please say your {fields[0]['label']}"
     }
 
 
 @app.post("/voice-input")
 async def voice_input(data: dict):
-    return {"action": "none"}
 
+    global fields, current_index
 
-@app.get("/debug")
-async def debug():
-    return latest_data
+    user_text = data.get("text")
+
+    if current_index >= len(fields):
+        return {
+            "action": "speak",
+            "text": "All fields are already filled."
+        }
+
+    field = fields[current_index]
+
+    response = {
+        "action": "fill",
+        "field": field["name"],
+        "value": user_text
+    }
+
+    current_index += 1
+
+    if current_index < len(fields):
+
+        response["next"] = f"Please say your {fields[current_index]['label']}"
+
+    else:
+
+        response["next"] = "All fields filled."
+
+    return response
