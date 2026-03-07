@@ -1,68 +1,56 @@
 # from fastapi import FastAPI
-# from fastapi.middleware.cors import CORSMiddleware
+# from pydantic import BaseModel
+# from llm_service import analyze_fields
 
 # app = FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+# class FormData(BaseModel):
+#     fields: list
 
-# fields = []
+# class VoiceInput(BaseModel):
+#     text: str
+
+# semantic_fields = []
 # current_index = 0
 
 
 # @app.post("/form-loaded")
-# async def form_loaded(data: dict):
+# def form_loaded(data: FormData):
 
-#     global fields, current_index
-
-#     fields = data.get("fields", [])
+#     global semantic_fields
+#     global current_index
 
 #     current_index = 0
 
-#     if not fields:
+#     semantic_fields = analyze_fields(data.fields)
+
+#     if not semantic_fields:
 #         return {"action": "none"}
 
 #     return {
 #         "action": "speak",
-#         "text": f"Form detected on this page. Please say your {fields[0]['label']}"
+#         "text": semantic_fields[0]["spoken_prompt"]
 #     }
 
 
 # @app.post("/voice-input")
-# async def voice_input(data: dict):
+# def voice_input(data: VoiceInput):
 
-#     global fields, current_index
+#     global current_index
 
-#     user_text = data.get("text")
-
-#     if current_index >= len(fields):
-#         return {
-#             "action": "speak",
-#             "text": "All fields are already filled."
-#         }
-
-#     field = fields[current_index]
+#     field = semantic_fields[current_index]["name"]
 
 #     response = {
 #         "action": "fill",
-#         "field": field["name"],
-#         "value": user_text
+#         "field": field,
+#         "value": data.text
 #     }
 
 #     current_index += 1
 
-#     if current_index < len(fields):
+#     if current_index < len(semantic_fields):
 
-#         response["next"] = f"Please say your {fields[current_index]['label']}"
-
-#     else:
-
-#         response["next"] = "All fields filled."
+#         response["next"] = semantic_fields[current_index]["spoken_prompt"]
 
 #     return response
 from fastapi import FastAPI
@@ -104,6 +92,13 @@ def form_loaded(data: FormData):
 def voice_input(data: VoiceInput):
 
     global current_index
+    global semantic_fields
+
+    if current_index >= len(semantic_fields):
+        return {
+            "action": "speak",
+            "text": "All fields completed."
+        }
 
     field = semantic_fields[current_index]["name"]
 
@@ -118,5 +113,10 @@ def voice_input(data: VoiceInput):
     if current_index < len(semantic_fields):
 
         response["next"] = semantic_fields[current_index]["spoken_prompt"]
+
+    else:
+
+        response["next"] = "All fields are filled. Do you want to submit the form? Say yes or no."
+        response["submit_prompt"] = True
 
     return response
