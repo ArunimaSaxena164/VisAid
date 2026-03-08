@@ -1,6 +1,9 @@
+// Change this to your EC2 public IP after deployment
+const BACKEND_URL = "http://13.232.1.76:8000";
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
-    let url = "http://localhost:8000/" + message.endpoint;
+    let url = BACKEND_URL + "/" + message.endpoint;
 
     fetch(url, {
         method: "POST",

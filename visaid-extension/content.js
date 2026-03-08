@@ -375,15 +375,14 @@ function startVisAid() {
 }
 
 
-/* FIELD DETECTION */
+/* SCAN FIELDS (reusable) */
 
-function detectFields() {
+function scanFields(options = {}) {
 
-    console.log("Scanning page for inputs...");
-
+    const onlyEmpty = options.onlyEmpty || false;
     const inputs = document.querySelectorAll("input, textarea, select");
-
-    fields = [];
+    const scanned = [];
+    const seenNames = new Set();
 
     inputs.forEach(input => {
 
@@ -403,10 +402,26 @@ function detectFields() {
                 text.includes("conditions") ||
                 text.includes("policy")
             ) {
-
-                console.log("Skipping terms checkbox from flow");
-
                 return;
+            }
+        }
+
+        /* SKIP ALREADY FILLED FIELDS */
+
+        if (onlyEmpty) {
+
+            if (input.type === "radio") {
+                const radios = document.querySelectorAll(`input[name="${input.name}"]`);
+                const anyChecked = [...radios].some(r => r.checked);
+                if (anyChecked) return;
+            } else if (input.type === "checkbox") {
+                const checkboxes = document.querySelectorAll(`input[name="${input.name}"]`);
+                const anyChecked = [...checkboxes].some(c => c.checked);
+                if (anyChecked) return;
+            } else if (input.tagName === "SELECT") {
+                if (input.selectedIndex > 0) return;
+            } else {
+                if (input.value && input.value.trim() !== "") return;
             }
         }
 
@@ -417,17 +432,17 @@ function detectFields() {
         if (labelTag) label = labelTag.innerText.trim();
 
 
-        /* RADIO */
+        /* RADIO (deduplicated by name) */
 
         if (input.type === "radio") {
 
-            const radios = document.querySelectorAll(`input[name="${input.name}"]`);
+            if (seenNames.has(input.name)) return;
+            seenNames.add(input.name);
 
+            const radios = document.querySelectorAll(`input[name="${input.name}"]`);
             const options = [...radios].map(r => r.value);
 
-            console.log("Radio detected:", input.name, options);
-
-            fields.push({
+            scanned.push({
                 name: input.name,
                 label: label,
                 type: "radio",
@@ -438,17 +453,17 @@ function detectFields() {
         }
 
 
-        /* CHECKBOX GROUP */
+        /* CHECKBOX GROUP (deduplicated by name) */
 
         if (input.type === "checkbox" && input.name) {
 
-            const checkboxes = document.querySelectorAll(`input[name="${input.name}"]`);
+            if (seenNames.has(input.name)) return;
+            seenNames.add(input.name);
 
+            const checkboxes = document.querySelectorAll(`input[name="${input.name}"]`);
             const options = [...checkboxes].map(c => c.value);
 
-            console.log("Checkbox group detected:", input.name, options);
-
-            fields.push({
+            scanned.push({
                 name: input.name,
                 label: label,
                 type: "checkbox",
@@ -465,9 +480,7 @@ function detectFields() {
 
             const options = [...input.options].map(o => o.text);
 
-            console.log("Dropdown detected:", input.name, options);
-
-            fields.push({
+            scanned.push({
                 name: input.name || input.id,
                 label: label,
                 type: "select",
@@ -480,7 +493,7 @@ function detectFields() {
 
         /* NORMAL INPUT */
 
-        fields.push({
+        scanned.push({
             name: input.name || input.id,
             label: label,
             placeholder: input.placeholder || "",
@@ -492,6 +505,18 @@ function detectFields() {
         });
 
     });
+
+    return scanned;
+}
+
+
+/* FIELD DETECTION */
+
+function detectFields() {
+
+    console.log("Scanning page for inputs...");
+
+    fields = scanFields({ onlyEmpty: true });
 
     console.log("Detected fields:", fields);
 
@@ -530,6 +555,13 @@ function handleBackendResponse(response) {
     console.log("Backend response:", response);
 
     if (!response) return;
+
+    if (response.action === "none") {
+        if (response.message) {
+            speak(response.message);
+        }
+        return;
+    }
 
     if (response.action === "speak") {
 
@@ -928,3 +960,29 @@ function submitForm() {
     }
 
 }
+
+
+/* PDF AUTO-FILL MESSAGE HANDLER */
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
+    if (message.type === "get-fields") {
+
+        const scanned = scanFields();
+        console.log("PDF auto-fill: scanned fields:", scanned);
+        sendResponse({ fields: scanned });
+    }
+
+    if (message.type === "fill-all") {
+
+        console.log("PDF auto-fill: filling", message.fills.length, "fields");
+
+        message.fills.forEach(item => {
+            fillField(item.field, item.value);
+        });
+
+        sendResponse({ status: "done", count: message.fills.length });
+    }
+
+    return true;
+}); 
