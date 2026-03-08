@@ -5,9 +5,9 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Chrome Extension](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/)
+[![Chrome Extension](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)(https://developer.chrome.com/docs/extensions/)
 [![Groq](https://img.shields.io/badge/Groq_LLM-LLaMA_3.3_70B-black?style=for-the-badge)](https://groq.com)
-[![Web Speech API](https://img.shields.io/badge/Web_Speech_API-Native_Browser_API-blue?style=for-the-badge)]
+[![Web Speech API](https://img.shields.io/badge/Web_Speech_API-Native_Browser_API-blue?style=for-the-badge)
 
 🚀 Built for **AI for Bharat Hackathon**
 
